@@ -1,15 +1,35 @@
-import React, { useEffect, useState } from "react";
-import UserContainer from "../components/UserContainer";
+import React, { useEffect, useRef, useState } from "react";
+import UsersContainer from "../components/UsersContainer";
+import Loading from "../components/Loading";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
-
-  let BaseUrl = "https://api.github.com/users";
+  const [loading, setLoading] = useState(null);
+  let BaseURL = "https://api.github.com/users";
+  const user = useRef("");
 
   async function AllUsers() {
-    const response = await fetch(BaseUrl);
-    const data = await response.json();
-    setUsers(data);
+    if (user.current.value === "") {
+      setLoading(true);
+      const response = await fetch(BaseURL);
+      const data = await response.json();
+      setUsers(data);
+      setLoading(null);
+    }
+  }
+
+  async function FindUser() {
+    setLoading(true);
+    if (user.current.value !== "") {
+      setUsers("");
+      const response = await fetch(BaseURL + "/" + user.current.value);
+      const data = await response.json();
+      setUsers(() => [data]);
+      user.current.value = "";
+    } else {
+      AllUsers();
+    }
+    setLoading(null);
   }
 
   useEffect(() => {
@@ -18,7 +38,21 @@ const Users = () => {
 
   return (
     <div>
-      <UserContainer users={users} />
+      <div className="flex justify-center items-center h-11 my-5">
+        <input
+          type="text"
+          placeholder="Search github username..."
+          className="h-full md:w-1/3 w-2/3 text-gray-800 px-2 font-semibold outline-none"
+          ref={user}
+        />
+        <button
+          onClick={FindUser}
+          className="bg-teal-500 font-semibold px-4 h-full"
+        >
+          Search
+        </button>
+      </div>
+      {loading ? <Loading /> : <UsersContainer users={users} />}
     </div>
   );
 };
