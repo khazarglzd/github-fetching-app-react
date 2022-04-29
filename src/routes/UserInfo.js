@@ -1,21 +1,41 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Tabs from "../components/Tabs";
+import Repo from "../components/Repo";
+import Events from "../components/Events";
+import Loading from "../components/Loading";
+import UsersContainer from "../components/UsersContainer";
 
 const UserInfo = () => {
   const [user, setUser] = useState([]);
+  const [type, setType] = useState("repos");
+  const [infos, setInfos] = useState([]);
+  const [loading, setLoading] = useState(null);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   let BaseURL = "https://api.github.com/users";
 
   async function GetUserInfo() {
+    setLoading(true);
     const res = await fetch(BaseURL + pathname);
     const data = await res.json();
     setUser(() => [data]);
+    setLoading(null);
+  }
+
+  async function GetUrls() {
+    setUser([]);
+    setLoading(true);
+    const res = await fetch(BaseURL + pathname + `/${type}`);
+    const data = await res.json();
+    setInfos(data);
+    setLoading(null);
   }
 
   useEffect(() => {
     GetUserInfo();
-  }, [pathname]);
+    GetUrls();
+  }, [pathname, type]);
 
   return (
     <div className="py-5">
@@ -74,13 +94,32 @@ const UserInfo = () => {
               <a
                 href={uinfo?.html_url}
                 target="_blank"
-                className="text-gray-200 font-semibold rounded cursor-pointer px-4 py-1  bg-teal-600 my-3 tracking-wide"
+                className="text-gray-200 font-semibold rounded cursor-pointer px-12 py-1 bg-teal-600 my-3 tracking-wide"
               >
                 Visit
               </a>
             </div>
           </div>
         ))}
+      <div className="flex border-b pb-4 gap-6 mt-[10%] mb-6 justify-center md:text-xl ">
+        <Tabs type={type} setType={setType} />
+      </div>
+      {loading && <Loading />}
+      {type === "repos" && (
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-7 w-10/12 mx-auto">
+          {infos && <Repo repos={infos} />}
+        </div>
+      )}
+      {type === "received_events" && (
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-7 w-10/12 mx-auto">
+          {infos && <Events events={infos} />}
+        </div>
+      )}
+      {type === "followers" && (
+        <div>
+          <UsersContainer users={infos} />
+        </div>
+      )}
     </div>
   );
 };
